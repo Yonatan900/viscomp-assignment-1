@@ -33,6 +33,7 @@ Mesh meshCreate(const std::vector<Vertex> &vertices, const std::vector<unsigned 
 }
 
 Mesh meshCreate(const std::vector<Vector3D>& positions, const std::vector<unsigned int>& indices, const Vector4D& color, GLenum vertexBufferUsage, GLenum indexBufferUsage) {
+
     GLuint vao = 0, vbo = 0, ebo = 0;
 
     glGenVertexArrays(1, &vao);
