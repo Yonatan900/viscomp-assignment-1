@@ -17,6 +17,7 @@ const Matrix4D trans = Matrix4D::identity();
 /* translation and scale for the scaled cube */
 namespace boat {
 
+    //scaling and transformation to get one boat
     const Matrix4D bodyScale = Matrix4D::scale(3.5f, 0.9f, 1.25f);
     const Matrix4D bodyTrans = Matrix4D::translation({0.0f, 0.0f, 0.0f});
 
@@ -46,6 +47,7 @@ namespace boat {
     const Vector4D centralPointBeforeTransformation = { 0.0, 0.0, 0.0, 1.0 };
 
     // Colors:
+    //optional but we did not use them
     const Vector4D colorBlack = { 0.0f, 0.0f, 0.0f, 1.0f };
     const Vector4D colorLightYellow = { 1.0f, 0.88f, 0.0f, 1.0f };
     const Vector4D colorDarkYellow = { 0.78f, 0.55f, 0.0f, 1.0f };
@@ -55,6 +57,7 @@ namespace boat {
 struct
 {
     /* camera */
+    //added one camera
     Camera cameras[2];
     short currentCamera;
     float zoomSpeedMultiplier;
@@ -64,7 +67,7 @@ struct
     Water water;
     Matrix4D waterModelMatrix;
 
-    /* cube mesh and transformations */
+    /* cube meshes and transformations */
     Mesh cubeMesh;
     Matrix4D cubeScalingMatrix;
     Matrix4D cubeTranslationMatrix;
@@ -119,6 +122,7 @@ struct
 {
     bool mouseLeftButtonPressed = false;
     Vector2D mousePressStart;
+    //added two more states for the camera mode switching
     bool buttonPressed[6] = {false, false, false, false, false, false};
 } sInput;
 
@@ -246,7 +250,7 @@ void sceneInit(float width, float height)
     /* setup transformation matrices for objects */
     sScene.waterModelMatrix = waterPlane::trans;
 
-
+    //creation of the meshes for the boat
     sScene.bodyMesh = meshCreate(cube::vertexPos, cube::indices, {0.5f, 0.102f, 0, 1.0f}, GL_STATIC_DRAW, GL_STATIC_DRAW);
     sScene.mastMesh = meshCreate(cube::vertexPos, cube::indices, {0.3f, 0.102f, 0, 1.0f}, GL_STATIC_DRAW, GL_STATIC_DRAW);
     sScene.bulwarkBackMesh = meshCreate(cube::vertexPos, cube::indices, {0.75f, 0.4f, 0, 1.0f}, GL_STATIC_DRAW, GL_STATIC_DRAW);
@@ -263,52 +267,8 @@ void sceneInit(float width, float height)
     /* load shader from file */
     sScene.shaderColor = shaderLoad("shader/default.vert", "shader/default.frag");
 }
-/* function to setup and initialize the whole scene */
-//void sceneInit(float width, float height) {
-//    /* initialize camera */
-//    sScene.camera = cameraCreate(width, height, to_radians(45.0f), 0.01f, 500.0f, {10.0f, 14.0f, 10.0f},
-//                                 {0.0f, 4.0f, 0.0f});
-//    sScene.zoomSpeedMultiplier = 0.05f;
-//
-//    /* setup objects in scene and create opengl buffers for meshes */
-//    for (int i = 0; i < 7; i++) {
-//        sScene.cubeMesh[i] = meshCreate(cube::vertices, cube::indices, GL_STATIC_DRAW, GL_STATIC_DRAW);
-//        //push these arrays up.
-//        // need to insert correct values in these arrays.
-//        float cubeScaleValues[7][3]={{1.0f, 0.4f, 2.0f},
-//                                     {0.075f, 0.5f, 1.0f},
-//                                     {0.0f, 0.0f, 0.0f},
-//                                     {0.0f, 0.0f, 0.0f},
-//                                     {0.0f, 0.0f, 0.0f},
-//                                     {0.0f, 0.0f, 0.0f},
-//                                     {0.0f, 0.0f, 0.0f}};
-//        std::vector<Vector3D> cubePosValues = { {0.0f, 0.0f, 0.0f},
-//                                                {2.0f, 0.5f, 0.0f},
-//                                                {0.0f, 0.0f, 0.0f},
-//                                                {0.0f, 0.0f, 0.0f},
-//                                                {0.0f, 0.0f, 0.0f},
-//                                                {0.0f, 0.0f, 0.0f},
-//                                                {0.0f, 0.0f, 0.0f},
-//                                                {0.0f, 0.0f, 0.0f} };
-//
-//                sScene.cubeScalingMatrix[i] = Matrix4D::scale(cubeScaleValues[i][0],cubeScaleValues[i][1],cubeScaleValues[i][2]);
-//                sScene.cubeTranslationMatrix[i] = Matrix4D::translation(cubePosValues[i]);
-//                sScene.cubeTransformationMatrix[i] =  sScene.cubeScalingMatrix[i]*sScene.cubeTranslationMatrix[i];
-//                sScene.cubeSpinRadPerSecond[i] = M_PI / 2.0f;
-//
-//    }
-//
-//    sScene.water = waterCreate(waterPlane::color);
-//
-//    /* setup transformation matrices for objects */
-//    sScene.waterModelMatrix = waterPlane::trans;
-//
-//
-//
-//    /* load shader from file */
-//    sScene.shaderColor = shaderLoad("shader/default.vert", "shader/default.frag");
-//}
-// Helper functions:
+
+// Helper function for the camera task:
 Vector3D vector4dToVector3d(Vector4D vec4d) {
     return { vec4d[0] / vec4d[3], vec4d[1] / vec4d[3], vec4d[2] / vec4d[3] };
 }
@@ -329,6 +289,7 @@ void sceneUpdate(float dt) {
     } else if (sInput.buttonPressed[3]) {
         rotationDirY = 1;
     }
+    //camera task
     bool cameraChange = false;
     int newCamera = 0;
     if (sInput.buttonPressed[4] && sScene.currentCamera == 1) {
@@ -340,23 +301,8 @@ void sceneUpdate(float dt) {
         cameraChange = true;
         newCamera = 1;
     }
-//    Mesh bodyMesh;
-//    Mesh mastMesh;
-//    Mesh bridgeMesh;
-//    Mesh bulwarkLeftMesh;
-//    Mesh bulwarkRightMesh;
-//    Mesh bulwarkFrontMesh;
-//    Mesh bulwarkBackMesh;
 
-//    /* udpate cube transformation matrix to include new rotation if one of the keys was pressed */
-//    for (int i = 0; i < sizeof(sScene.cubeMesh); i++) {
-//        if (rotationDirX != 0 || rotationDirY != 0) {
-//            sScene.cubeTransformationMatrix[i] = Matrix4D::rotationY(rotationDirY * sScene.cubeSpinRadPerSecond * dt) *
-//                                                 Matrix4D::rotationX(rotationDirX * sScene.cubeSpinRadPerSecond * dt) *
-//                                                 sScene.cubeTransformationMatrix[i];
-//        }
-//    }
-    /* udpate cube transformation matrix to include new rotation if one of the keys was pressed */
+    /* udpate the cube transformation matrixes to include new rotation if one of the keys was pressed */
     if (rotationDirX != 0 || rotationDirY != 0) {
         sScene.bodyTransformationMatrix = Matrix4D::rotationY(rotationDirY * sScene.cubeSpinRadPerSecond * dt)
                 * Matrix4D::rotationX(rotationDirX * sScene.cubeSpinRadPerSecond * dt) * sScene.bodyTransformationMatrix;
