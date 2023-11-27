@@ -313,8 +313,7 @@ Vector3D vector4dToVector3d(Vector4D vec4d) {
     return { vec4d[0] / vec4d[3], vec4d[1] / vec4d[3], vec4d[2] / vec4d[3] };
 }
 /* function to move and update objects in scene (e.g., rotate cube according to user input) */
-void sceneUpdate(float dt)
-{
+void sceneUpdate(float dt) {
     /* if 'w' or 's' pressed, cube should rotate around x axis */
     int rotationDirX = 0;
     if (sInput.buttonPressed[0]) {
@@ -332,44 +331,88 @@ void sceneUpdate(float dt)
     }
     bool cameraChange = false;
     int newCamera = 0;
-    if(sInput.buttonPressed[4] && sScene.currentCamera == 1) {
+    if (sInput.buttonPressed[4] && sScene.currentCamera == 1) {
         // Change to camera mode 1.
         cameraChange = true;
         newCamera = 0;
-    } else if(sInput.buttonPressed[5] && sScene.currentCamera == 0) {
+    } else if (sInput.buttonPressed[5] && sScene.currentCamera == 0) {
         // Change to camera mode 2.
         cameraChange = true;
         newCamera = 1;
     }
+//    Mesh bodyMesh;
+//    Mesh mastMesh;
+//    Mesh bridgeMesh;
+//    Mesh bulwarkLeftMesh;
+//    Mesh bulwarkRightMesh;
+//    Mesh bulwarkFrontMesh;
+//    Mesh bulwarkBackMesh;
+
+//    /* udpate cube transformation matrix to include new rotation if one of the keys was pressed */
+//    for (int i = 0; i < sizeof(sScene.cubeMesh); i++) {
+//        if (rotationDirX != 0 || rotationDirY != 0) {
+//            sScene.cubeTransformationMatrix[i] = Matrix4D::rotationY(rotationDirY * sScene.cubeSpinRadPerSecond * dt) *
+//                                                 Matrix4D::rotationX(rotationDirX * sScene.cubeSpinRadPerSecond * dt) *
+//                                                 sScene.cubeTransformationMatrix[i];
+//        }
+//    }
     /* udpate cube transformation matrix to include new rotation if one of the keys was pressed */
-    for (int i = 0; i < sizeof(sScene.cubeMesh); i++) {
-        if (rotationDirX != 0 || rotationDirY != 0) {
-            sScene.cubeTransformationMatrix[i] = Matrix4D::rotationY(rotationDirY * sScene.cubeSpinRadPerSecond * dt) *
-                                              Matrix4D::rotationX(rotationDirX * sScene.cubeSpinRadPerSecond * dt) *
-                                              sScene.cubeTransformationMatrix[i];
+    if (rotationDirX != 0 || rotationDirY != 0) {
+        sScene.bodyTransformationMatrix = Matrix4D::rotationY(rotationDirY * sScene.cubeSpinRadPerSecond * dt)
+                * Matrix4D::rotationX(rotationDirX * sScene.cubeSpinRadPerSecond * dt) * sScene.bodyTransformationMatrix;
+    }
+    /* udpate cube transformation matrix to include new rotation if one of the keys was pressed */
+    if (rotationDirX != 0 || rotationDirY != 0) {
+        sScene.mastTransformationMatrix = Matrix4D::rotationY(rotationDirY * sScene.cubeSpinRadPerSecond * dt)
+                                          * Matrix4D::rotationX(rotationDirX * sScene.cubeSpinRadPerSecond * dt) * sScene.mastTransformationMatrix;
+    }
+    /* udpate cube transformation matrix to include new rotation if one of the keys was pressed */
+    if (rotationDirX != 0 || rotationDirY != 0) {
+        sScene.bridgeTransformationMatrix = Matrix4D::rotationY(rotationDirY * sScene.cubeSpinRadPerSecond * dt)
+                                          * Matrix4D::rotationX(rotationDirX * sScene.cubeSpinRadPerSecond * dt) * sScene.bridgeTransformationMatrix;
+    }
+    /* udpate cube transformation matrix to include new rotation if one of the keys was pressed */
+    if (rotationDirX != 0 || rotationDirY != 0) {
+        sScene.bulwarkFrontTransformationMatrix = Matrix4D::rotationY(rotationDirY * sScene.cubeSpinRadPerSecond * dt)
+                                          * Matrix4D::rotationX(rotationDirX * sScene.cubeSpinRadPerSecond * dt) * sScene.bulwarkFrontTransformationMatrix;
+    }
+    /* udpate cube transformation matrix to include new rotation if one of the keys was pressed */
+    if (rotationDirX != 0 || rotationDirY != 0) {
+        sScene.bulwarkBackTransformationMatrix = Matrix4D::rotationY(rotationDirY * sScene.cubeSpinRadPerSecond * dt)
+                                                  * Matrix4D::rotationX(rotationDirX * sScene.cubeSpinRadPerSecond * dt) * sScene.bulwarkBackTransformationMatrix;
+    }
+    /* udpate cube transformation matrix to include new rotation if one of the keys was pressed */
+    if (rotationDirX != 0 || rotationDirY != 0) {
+        sScene.bulwarkLeftTransformationMatrix = Matrix4D::rotationY(rotationDirY * sScene.cubeSpinRadPerSecond * dt)
+                                                  * Matrix4D::rotationX(rotationDirX * sScene.cubeSpinRadPerSecond * dt) * sScene.bulwarkLeftTransformationMatrix;
+    }
+    /* udpate cube transformation matrix to include new rotation if one of the keys was pressed */
+    if (rotationDirX != 0 || rotationDirY != 0) {
+        sScene.bulwarkRightTransformationMatrix = Matrix4D::rotationY(rotationDirY * sScene.cubeSpinRadPerSecond * dt)
+                                                  * Matrix4D::rotationX(rotationDirX * sScene.cubeSpinRadPerSecond * dt) * sScene.bulwarkLeftTransformationMatrix;
+    }
+        // Update camera:
+        Vector3D centralPointOfBoat =
+                vector4dToVector3d((sScene.bodyTransformationMatrix) * centralPointBeforeTransformation);
+        if (cameraChange) {
+            Camera oldCamera = sScene.cameras[sScene.currentCamera];
+            if (newCamera == 0) {
+                sScene.cameras[newCamera] = cameraCreate(oldCamera.width, oldCamera.height, oldCamera.fov,
+                                                         oldCamera.nearPlane,
+                                                         oldCamera.farPlane, oldCamera.position, oldCamera.lookAt);
+            } else { // newCamera == 1
+                sScene.cameras[newCamera] = cameraCreate(oldCamera.width, oldCamera.height, oldCamera.fov,
+                                                         oldCamera.nearPlane,
+                                                         oldCamera.farPlane, oldCamera.position, centralPointOfBoat);
+            }
+
+            sScene.currentCamera = newCamera;
+        }
+
+        if (sScene.currentCamera == 1) {
+            sScene.cameras[sScene.currentCamera].lookAt = centralPointOfBoat;
         }
     }
-
-    // Update camera:
-    Vector3D centralPointOfBoat =
-            vector4dToVector3d((sScene.bodyTransformationMatrix) * centralPointBeforeTransformation);
-    if(cameraChange) {
-        Camera oldCamera = sScene.cameras[sScene.currentCamera];
-        if(newCamera == 0) {
-            sScene.cameras[newCamera] = cameraCreate(oldCamera.width, oldCamera.height, oldCamera.fov, oldCamera.nearPlane,
-                                                     oldCamera.farPlane, oldCamera.position, oldCamera.lookAt);
-        } else { // newCamera == 1
-            sScene.cameras[newCamera] = cameraCreate(oldCamera.width, oldCamera.height, oldCamera.fov, oldCamera.nearPlane,
-                                                     oldCamera.farPlane, oldCamera.position, centralPointOfBoat);
-        }
-
-        sScene.currentCamera = newCamera;
-    }
-
-    if(sScene.currentCamera == 1) {
-        sScene.cameras[sScene.currentCamera].lookAt = centralPointOfBoat;
-    }
-}
 
 void boatDraw()
 {
