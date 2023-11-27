@@ -60,7 +60,8 @@ namespace boat {
 struct
 {
     /* camera */
-    Camera camera;
+    Camera cameras[2];
+    short currentCamera;
     float zoomSpeedMultiplier;
 
     /* water */
@@ -86,7 +87,7 @@ struct
 {
     bool mouseLeftButtonPressed = false;
     Vector2D mousePressStart;
-    bool buttonPressed[4] = {false, false, false, false};
+    bool buttonPressed[6] = {false, false, false, false, false, false};
 } sInput;
 
 /* GLFW callback function for keyboard events */
@@ -124,6 +125,12 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     {
         sInput.buttonPressed[3] = (action == GLFW_PRESS || action == GLFW_REPEAT);
     }
+    if(key == GLFW_KEY_1) {
+        sInput.buttonPressed[4] = (action == GLFW_PRESS || action == GLFW_REPEAT);
+    }
+    if(key == GLFW_KEY_2) {
+        sInput.buttonPressed[5] = (action == GLFW_PRESS || action == GLFW_REPEAT);
+    }
 }
 
 /* GLFW callback function for mouse position events */
@@ -133,7 +140,7 @@ void mousePosCallback(GLFWwindow* window, double x, double y)
     if(sInput.mouseLeftButtonPressed)
     {
         Vector2D diff = sInput.mousePressStart - Vector2D(x, y);
-        cameraUpdateOrbit(sScene.camera, diff, 0.0f);
+        cameraUpdateOrbit(sScene.cameras[sScene.currentCamera], diff, 0.0f);
         sInput.mousePressStart = Vector2D(x, y);
     }
 }
@@ -153,21 +160,21 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 /* GLFW callback function for mouse scroll events */
 void mouseScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    cameraUpdateOrbit(sScene.camera, {0, 0}, sScene.zoomSpeedMultiplier * yoffset);
+    cameraUpdateOrbit(sScene.cameras[sScene.currentCamera], {0, 0}, sScene.zoomSpeedMultiplier * yoffset);
 }
 
 /* GLFW callback function for window resize event */
 void windowResizeCallback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
-    sScene.camera.width = width;
-    sScene.camera.height = height;
+    sScene.cameras[sScene.currentCamera].width = width;
+    sScene.cameras[sScene.currentCamera].height = height;
 }
 /* function to setup and initialize the whole scene */
 void sceneInit(float width, float height)
 {
-    /* initialize camera */
-    sScene.camera = cameraCreate(width, height, to_radians(45.0f), 0.01f, 500.0f, {10.0f, 14.0f, 10.0f}, {0.0f, 4.0f, 0.0f});
+    /* initialize camera[0] */
+    sScene.cameras[0] = cameraCreate(width, height, to_radians(45.0f), 0.01f, 500.0f, {10.0f, 14.0f, 10.0f}, {0.0f, 4.0f, 0.0f});
     sScene.zoomSpeedMultiplier = 0.05f;
 
     /* setup objects in scene and create opengl buffers for meshes */
@@ -267,7 +274,10 @@ void sceneInit(float width, float height)
 //    /* load shader from file */
 //    sScene.shaderColor = shaderLoad("shader/default.vert", "shader/default.frag");
 //}
-
+// Helper functions:
+Vector3D vector4dToVector3d(Vector4D vec4d) {
+    return { vec4d[0] / vec4d[3], vec4d[1] / vec4d[3], vec4d[2] / vec4d[3] };
+}
 /* function to move and update objects in scene (e.g., rotate cube according to user input) */
 void sceneUpdate(float dt)
 {
@@ -286,7 +296,17 @@ void sceneUpdate(float dt)
     } else if (sInput.buttonPressed[3]) {
         rotationDirY = 1;
     }
-
+    bool cameraChange = false;
+    int newCamera = 0;
+    if(sInput.buttonPressed[4] && sScene.currentCamera == 1) {
+        // Change to camera mode 1.
+        cameraChange = true;
+        newCamera = 0;
+    } else if(sInput.buttonPressed[5] && sScene.currentCamera == 0) {
+        // Change to camera mode 2.
+        cameraChange = true;
+        newCamera = 1;
+    }
     /* udpate cube transformation matrix to include new rotation if one of the keys was pressed */
     for (int i = 0; i < sizeof(sScene.cubeMesh); i++) {
         if (rotationDirX != 0 || rotationDirY != 0) {
@@ -295,7 +315,31 @@ void sceneUpdate(float dt)
                                               sScene.cubeTransformationMatrix[i];
         }
     }
+
+    // Update camera:
+    Vector3D centralPointOfBoat =
+            vector4dToVector3d(sScene.cubeModelMatrix[boat::BODY] * boat::centralPointBeforeTransformation);
+    if(cameraChange) {
+        Camera oldCamera = sScene.cameras[sScene.currentCamera];
+        if(newCamera == 0) {
+            sScene.cameras[newCamera] = cameraCreate(oldCamera.width, oldCamera.height, oldCamera.fov, oldCamera.nearPlane,
+                                                     oldCamera.farPlane, oldCamera.position, oldCamera.lookAt);
+        } else { // newCamera == 1
+            sScene.cameras[newCamera] = cameraCreate(oldCamera.width, oldCamera.height, oldCamera.fov, oldCamera.nearPlane,
+                                                     oldCamera.farPlane, oldCamera.position, centralPointOfBoat);
+        }
+
+        sScene.currentCamera = newCamera;
+    }
+
+    if(sScene.currentCamera == 1) {
+        sScene.cameras[sScene.currentCamera].lookAt = centralPointOfBoat;
+    }
 }
+
+
+
+
 
 /* function to draw all objects in the scene */
 void sceneDraw()
@@ -308,8 +352,8 @@ void sceneDraw()
     /* use shader and set the uniforms (names match the ones in the shader) */
     {
         glUseProgram(sScene.shaderColor.id);
-        shaderUniform(sScene.shaderColor, "uProj",  cameraProjection(sScene.camera));
-        shaderUniform(sScene.shaderColor, "uView",  cameraView(sScene.camera));
+        shaderUniform(sScene.shaderColor, "uProj",  cameraProjection(sScene.cameras[sScene.currentCamera]));
+        shaderUniform(sScene.shaderColor, "uView",  cameraView(sScene.cameras[sScene.currentCamera]));
 
         /* draw water plane */
         shaderUniform(sScene.shaderColor, "uModel", sScene.waterModelMatrix);
