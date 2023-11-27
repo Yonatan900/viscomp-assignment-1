@@ -16,24 +16,31 @@ const Matrix4D trans = Matrix4D::identity();
 
 /* translation and scale for the scaled cube */
 namespace boat {
-    const Matrix4D scale = Matrix4D::scale(2.0f, 2.0f, 2.0f);
-    const Matrix4D trans = Matrix4D::translation({0.0f, 4.0f, 0.0f});
 
-    // Scales:
-    const Matrix4D scaleMast = Matrix4D::scale(0.1f, 0.1f, 1.0f);
-    const Matrix4D scaleCube = Matrix4D::scale(0.4f, 0.4f, 0.4f);
-    const Matrix4D scaleBody = Matrix4D::scale(2.3f, 0.4f, 0.9f);
-    const Matrix4D scaleTop = Matrix4D::scale(2.3f, 0.4f, 0.9f);
-// Initial translations:
-    const Matrix4D initialTranslations[] = {
-            Matrix4D::translation({1.6f, 0.3f, -1.0125f}),  // transTireFL
-            Matrix4D::translation({1.6f, 0.3f, 1.0125f}),   // transTireFR
-            Matrix4D::translation({-1.4f, 0.3f, -1.0125f}), // transTireRL
-            Matrix4D::translation({-1.4f, 0.3f, 1.0125f}),  // transTireRR
-            Matrix4D::translation({-2.4125f, 1.1f, 0.0f}),  // transTireRes
-            Matrix4D::translation({1.6f, 0.3f, 0.0f}),      // transAxisF
-            Matrix4D::translation({-1.4f, 0.3f, 0.0f}),     // transAxisR
-    };
+    const Matrix4D bodyScale = Matrix4D::scale(3.5f, 0.9f, 1.25f);
+    const Matrix4D bodyTrans = Matrix4D::translation({0.0f, 0.0f, 0.0f});
+
+    const Matrix4D mastScale = Matrix4D::scale(0.15f, 1.5f, 0.15f);
+    const Matrix4D mastTrans = Matrix4D::translation({-1.0f, 2.4f, 0.0f});
+
+    const Matrix4D bridgeScale = Matrix4D::scale(0.65f, 0.75f, 0.75f);
+    const Matrix4D bridgeTrans = Matrix4D::translation({1.5f, 1.65f, 0});
+
+    const Matrix4D bulwarkLeftScale = Matrix4D::scale(3.2f, 0.3f, 0.15f);
+    const Matrix4D bulwarkLeftTrans = Matrix4D::translation({0, 1.2f, -1.1f});
+
+    const Matrix4D bulwarkRightScale = Matrix4D::scale(3.2f, 0.3f, 0.15f);
+    const Matrix4D bulwarkRightTrans = Matrix4D::translation({0, 1.2f, 1.1f});
+
+    const Matrix4D bulwarkFrontScale = Matrix4D::scale(0.15f, 0.3f, 1.25f);
+    const Matrix4D bulwarkFrontTrans = Matrix4D::translation({3.35f, 1.2f, 0});
+
+    const Matrix4D bulwarkBackScale = Matrix4D::scale(0.15f, 0.3f, 1.25f);
+    const Matrix4D bulwarkBackTrans = Matrix4D::translation({-3.35f, 1.2f, 0});
+}
+
+
+
 // Position of the central point of each cube before any transformation (with homogenuous
     // coordinates):
     const Vector4D centralPointBeforeTransformation = { 0.0, 0.0, 0.0, 1.0 };
@@ -42,20 +49,8 @@ namespace boat {
     const Vector4D colorBlack = { 0.0f, 0.0f, 0.0f, 1.0f };
     const Vector4D colorLightYellow = { 1.0f, 0.88f, 0.0f, 1.0f };
     const Vector4D colorDarkYellow = { 0.78f, 0.55f, 0.0f, 1.0f };
-    // Constants:
-    const int numCubes = 7;
-    const int WHEELS = 3;
-    const int WHEELS_ALL = 4; // Includes reserver wheel.
-    const int WHEEL_FL = 0;
-    const int WHEEL_FR = 1;
-    const int WHEEL_RL = 2;
-    const int WHEEL_RR = 3;
-    const int WHEEL_RES = 4;
-    const int AXIS_F = 5;
-    const int AXIS_R = 6;
-    const int BODY = 7;
-    const int TOP = 8;
-}
+
+
 /* struct holding all necessary state variables for scene */
 struct
 {
@@ -70,12 +65,49 @@ struct
     Matrix4D waterModelMatrix;
 
     /* cube mesh and transformations */
-    Mesh cubeMesh[boat::numCubes];
+    Mesh cubeMesh;
     Matrix4D cubeScalingMatrix;
     Matrix4D cubeTranslationMatrix;
     Matrix4D cubeTransformationMatrix;
     float cubeSpinRadPerSecond;
-    Matrix4D cubeModelMatrix[boat::numCubes];
+    /* boat mesh and transformations */
+    Mesh bodyMesh;
+    Mesh mastMesh;
+    Mesh bridgeMesh;
+    Mesh bulwarkLeftMesh;
+    Mesh bulwarkRightMesh;
+    Mesh bulwarkFrontMesh;
+    Mesh bulwarkBackMesh;
+
+    Matrix4D bodyTransformationMatrix;
+
+    Matrix4D bodyScalingMatrix;
+    Matrix4D bodyTranslationMatrix;
+
+    Matrix4D mastScalingMatrix;
+    Matrix4D mastTranslationMatrix;
+    Matrix4D mastTransformationMatrix;
+
+    Matrix4D bridgeScalingMatrix;
+    Matrix4D bridgeTranslationMatrix;
+    Matrix4D bridgeTransformationMatrix;
+
+    Matrix4D bulwarkLeftScalingMatrix;
+    Matrix4D bulwarkLeftTranslationMatrix;
+    Matrix4D bulwarkLeftTransformationMatrix;
+
+    Matrix4D bulwarkRightScalingMatrix;
+    Matrix4D bulwarkRightTranslationMatrix;
+    Matrix4D bulwarkRightTransformationMatrix;
+
+    Matrix4D bulwarkFrontScalingMatrix;
+    Matrix4D bulwarkFrontTranslationMatrix;
+    Matrix4D bulwarkFrontTransformationMatrix;
+
+    Matrix4D bulwarkBackScalingMatrix;
+    Matrix4D bulwarkBackTranslationMatrix;
+    Matrix4D bulwarkBackTransformationMatrix;
+
 
 
     /* shader */
@@ -170,6 +202,35 @@ void windowResizeCallback(GLFWwindow* window, int width, int height)
     sScene.cameras[sScene.currentCamera].width = width;
     sScene.cameras[sScene.currentCamera].height = height;
 }
+void setupBoat() {
+    sScene.bodyScalingMatrix = boat::bodyScale;
+    sScene.bodyTranslationMatrix = boat::bodyTrans;
+    sScene.bodyTransformationMatrix = Matrix4D::identity();
+
+    sScene.mastScalingMatrix = boat::mastScale;
+    sScene.mastTranslationMatrix = boat::mastTrans;
+    sScene.mastTransformationMatrix = Matrix4D::identity();
+
+    sScene.bridgeScalingMatrix = boat::bridgeScale;
+    sScene.bridgeTranslationMatrix = boat::bridgeTrans;
+    sScene.bridgeTransformationMatrix = Matrix4D::identity();
+
+    sScene.bulwarkLeftScalingMatrix = boat::bulwarkLeftScale;
+    sScene.bulwarkLeftTranslationMatrix = boat::bulwarkLeftTrans;
+    sScene.bulwarkLeftTransformationMatrix = Matrix4D::identity();
+
+    sScene.bulwarkRightScalingMatrix = boat::bulwarkRightScale;
+    sScene.bulwarkRightTranslationMatrix = boat::bulwarkRightTrans;
+    sScene.bulwarkRightTransformationMatrix = Matrix4D::identity();
+
+    sScene.bulwarkFrontScalingMatrix = boat::bulwarkFrontScale;
+    sScene.bulwarkFrontTranslationMatrix = boat::bulwarkFrontTrans;
+    sScene.bulwarkFrontTransformationMatrix = Matrix4D::identity();
+
+    sScene.bulwarkBackScalingMatrix = boat::bulwarkBackScale;
+    sScene.bulwarkBackTranslationMatrix = boat::bulwarkBackTrans;
+    sScene.bulwarkBackTransformationMatrix = Matrix4D::identity();
+}
 /* function to setup and initialize the whole scene */
 void sceneInit(float width, float height)
 {
@@ -178,50 +239,23 @@ void sceneInit(float width, float height)
     sScene.zoomSpeedMultiplier = 0.05f;
 
     /* setup objects in scene and create opengl buffers for meshes */
-//    sScene.cubeMesh = meshCreate(cube::vertices, cube::indices, GL_STATIC_DRAW, GL_STATIC_DRAW);
+    sScene.cubeMesh = meshCreate(cube::vertices, cube::indices, GL_STATIC_DRAW, GL_STATIC_DRAW);
     sScene.water = waterCreate(waterPlane::color);
 
-    for(int i = 0; i < boat::numCubes; i++) {
-        sScene.cubeMesh[i] = meshCreate(cube::vertices, cube::indices,
-//                                      i <= 4 ? boat::colorBlack
-//                                                           : i <= 5? boat::colorDarkYellow
-//                                                                                : boat::colorLightYellow,
-                                                                                GL_STATIC_DRAW, GL_STATIC_DRAW);
-    }
-
-
-
-    /* create 7 init cubes*/
-    for(int i = 0; i < boat::numCubes; i++) {
-        sScene.cubeModelMatrix[i] = Matrix4D::identity();
-    }
-
-    // Scale all unit cubes:
-    // Scale wheels:
-    for(int i = 0; i <= boat::WHEELS_ALL; i++) {
-        sScene.cubeModelMatrix[i] = boat::scaleMast * sScene.cubeModelMatrix[i];
-    }
-
-    // Scales axises:
-    for(int i = boat::AXIS_F; i <= boat::AXIS_R; i++) {
-        sScene.cubeModelMatrix[i] = boat::scaleCube * sScene.cubeModelMatrix[i];
-    }
-
-    // Scale body and top:
-    sScene.cubeModelMatrix[boat::BODY] = boat::scaleBody * sScene.cubeModelMatrix[boat::BODY];
-    sScene.cubeModelMatrix[boat::TOP] = boat::scaleTop * sScene.cubeModelMatrix[boat::TOP];
-
-    // Translate all cubes:
-    for(int i = 0; i < boat::numCubes; i++) {
-        sScene.cubeModelMatrix[i] = boat::initialTranslations[i] * sScene.cubeModelMatrix[i];
-    }
 
     /* setup transformation matrices for objects */
     sScene.waterModelMatrix = waterPlane::trans;
 
-    sScene.cubeScalingMatrix = boat::scale;
-    sScene.cubeTranslationMatrix = boat::trans;
 
+    sScene.bodyMesh = meshCreate(cube::vertexPos, cube::indices, {0.5f, 0.102f, 0, 1.0f}, GL_STATIC_DRAW, GL_STATIC_DRAW);
+    sScene.mastMesh = meshCreate(cube::vertexPos, cube::indices, {0.3f, 0.102f, 0, 1.0f}, GL_STATIC_DRAW, GL_STATIC_DRAW);
+    sScene.bulwarkBackMesh = meshCreate(cube::vertexPos, cube::indices, {0.75f, 0.4f, 0, 1.0f}, GL_STATIC_DRAW, GL_STATIC_DRAW);
+    sScene.bulwarkLeftMesh = meshCreate(cube::vertexPos, cube::indices, {0.75f, 0.4f, 0, 1.0f}, GL_STATIC_DRAW, GL_STATIC_DRAW);
+    sScene.bulwarkFrontMesh = meshCreate(cube::vertexPos, cube::indices, {0.75f, 0.4f, 0, 1.0f}, GL_STATIC_DRAW, GL_STATIC_DRAW);
+    sScene.bulwarkRightMesh = meshCreate(cube::vertexPos, cube::indices, {0.75f, 0.4f, 0, 1.0f}, GL_STATIC_DRAW, GL_STATIC_DRAW);
+    sScene.bridgeMesh = meshCreate(cube::vertexPos, cube::indices, {1.0f, 1.0f, 1.0f, 1.0f}, GL_STATIC_DRAW, GL_STATIC_DRAW);
+
+    setupBoat();
     sScene.cubeTransformationMatrix = Matrix4D::identity();
 
     sScene.cubeSpinRadPerSecond = M_PI / 2.0f;
@@ -318,7 +352,7 @@ void sceneUpdate(float dt)
 
     // Update camera:
     Vector3D centralPointOfBoat =
-            vector4dToVector3d(sScene.cubeModelMatrix[boat::BODY] * boat::centralPointBeforeTransformation);
+            vector4dToVector3d((sScene.bodyTransformationMatrix) * centralPointBeforeTransformation);
     if(cameraChange) {
         Camera oldCamera = sScene.cameras[sScene.currentCamera];
         if(newCamera == 0) {
@@ -337,7 +371,36 @@ void sceneUpdate(float dt)
     }
 }
 
+void boatDraw()
+{
+    shaderUniform(sScene.shaderColor, "uModel", sScene.bodyTranslationMatrix * sScene.bodyTransformationMatrix * sScene.bodyScalingMatrix);
+    glBindVertexArray(sScene.bodyMesh.vao);
+    glDrawElements(GL_TRIANGLES, sScene.bodyMesh.size_ibo, GL_UNSIGNED_INT, nullptr);
 
+    shaderUniform(sScene.shaderColor, "uModel", sScene.bodyTransformationMatrix * sScene.mastTranslationMatrix * sScene.mastScalingMatrix);
+    glBindVertexArray(sScene.mastMesh.vao);
+    glDrawElements(GL_TRIANGLES, sScene.mastMesh.size_ibo, GL_UNSIGNED_INT, nullptr);
+
+    shaderUniform(sScene.shaderColor, "uModel",sScene.bodyTransformationMatrix * sScene.bridgeTranslationMatrix * sScene.bridgeScalingMatrix);
+    glBindVertexArray(sScene.bridgeMesh.vao);
+    glDrawElements(GL_TRIANGLES, sScene.bridgeMesh.size_ibo, GL_UNSIGNED_INT, nullptr);
+
+    shaderUniform(sScene.shaderColor, "uModel", sScene.bodyTransformationMatrix * sScene.bulwarkLeftTranslationMatrix * sScene.bulwarkLeftScalingMatrix);
+    glBindVertexArray(sScene.bulwarkLeftMesh.vao);
+    glDrawElements(GL_TRIANGLES, sScene.bulwarkLeftMesh.size_ibo, GL_UNSIGNED_INT, nullptr);
+
+    shaderUniform(sScene.shaderColor, "uModel",  sScene.bodyTransformationMatrix * sScene.bulwarkBackTranslationMatrix * sScene.bulwarkBackScalingMatrix);
+    glBindVertexArray(sScene.bulwarkBackMesh.vao);
+    glDrawElements(GL_TRIANGLES, sScene.bulwarkBackMesh.size_ibo, GL_UNSIGNED_INT, nullptr);
+
+    shaderUniform(sScene.shaderColor, "uModel",  sScene.bodyTransformationMatrix * sScene.bulwarkRightTranslationMatrix * sScene.bulwarkRightScalingMatrix);
+    glBindVertexArray(sScene.bulwarkRightMesh.vao);
+    glDrawElements(GL_TRIANGLES, sScene.bulwarkRightMesh.size_ibo, GL_UNSIGNED_INT, nullptr);
+
+    shaderUniform(sScene.shaderColor, "uModel",  sScene.bodyTransformationMatrix * sScene.bulwarkFrontTranslationMatrix * sScene.bulwarkFrontScalingMatrix);
+    glBindVertexArray(sScene.bulwarkFrontMesh.vao);
+    glDrawElements(GL_TRIANGLES, sScene.bulwarkFrontMesh.size_ibo, GL_UNSIGNED_INT, nullptr);
+}
 
 
 
@@ -363,9 +426,10 @@ void sceneDraw()
         /* draw cube, requires to calculate the final model matrix from all transformations */
         for (int i = 0; i < 7; i++){
         shaderUniform(sScene.shaderColor, "uModel", sScene.cubeTranslationMatrix * sScene.cubeTransformationMatrix * sScene.cubeScalingMatrix);
-        glBindVertexArray(sScene.cubeMesh[i].vao);
-        glDrawElements(GL_TRIANGLES, sScene.cubeMesh[i].size_ibo, GL_UNSIGNED_INT, nullptr);
+        glBindVertexArray(sScene.cubeMesh.vao);
+        glDrawElements(GL_TRIANGLES, sScene.cubeMesh.size_ibo, GL_UNSIGNED_INT, nullptr);
         }
+        boatDraw();
     }
     glCheckError();
 
@@ -414,6 +478,7 @@ int main(int argc, char** argv)
         /* draw all objects in the scene */
         sceneDraw();
 
+
         /* swap front and back buffer */
         glfwSwapBuffers(window);
     }
@@ -423,9 +488,7 @@ int main(int argc, char** argv)
     /* delete opengl shader and buffers */
     shaderDelete(sScene.shaderColor);
     waterDelete(sScene.water);
-    for(int i = 0; i < boat::numCubes; i++) {
-        meshDelete(sScene.cubeMesh[i]);
-    }
+    meshDelete(sScene.cubeMesh);
 
     /* cleanup glfw/glcontext */
     windowDelete(window);
